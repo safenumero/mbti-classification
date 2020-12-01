@@ -22,10 +22,10 @@ from fake_useragent import UserAgent
 from pathlib import Path
 from tendo import singleton
 
-common_func_dir = os.path.abspath((Path(__file__).parent / "../../common_func").resolve())
+common_func_dir = os.path.abspath((Path(__file__).parent / '../../common_func').resolve())
 sys.path.append(common_func_dir)
 
-from config import NAVER_CONFIG, COLLECTION_DAT_DIR
+from config import NAVER_CONFIG, COLLECTION_DAT_DIR, COLLECTION_OUT_DIR
 from logger import JsonLogger
 
 logging = JsonLogger().get_logger()
@@ -59,7 +59,8 @@ def export_output_to_parquet(file_id, collection_dat_dir, data_dict_list):
 def get_naver_cafe_article(p_p_article_num_list, p_driver, p_cafe_id, p_p_result_dict_list):
 
     split_num = 1000
-    logging.info(os.getpid())
+    pid = os.getpid()
+    logging.info(pid)
 	
     result_tmp_dict_list = []
     for count, article_num in enumerate(p_p_article_num_list):
@@ -105,21 +106,21 @@ def get_naver_cafe_article(p_p_article_num_list, p_driver, p_cafe_id, p_p_result
             
             result_tmp_dict_list.append(article_dict)
             
-            logging.info('Succeed to get article({}, {}). {}'.format(os.getpid(), article_num, article_dict))
+            logging.info('Succeed to get article({}, {}). {}'.format(pid, article_num, article_dict))
         except Exception as e:
-            logging.error('Failed to get article({}, {}). {}'.format(os.getpid(), article_num, str(e)))
+            logging.error('Failed to get article({}, {}). {}'.format(pid, article_num, str(e)))
 
         try:
             if (count + 1) % split_num == 0:
-                file_id = 'mbti_{}_{}'.format(os.getpid(), (count + 1) // split_num)
+                file_id = 'mbti_{}_{}'.format(pid, str((count + 1) // split_num).rjust(2, '0'))
                 export_output_to_parquet(file_id, COLLECTION_DAT_DIR, result_tmp_dict_list)
                 result_tmp_dict_list = []
-            elif count >= len(p_p_article_num_list):
-                file_id = 'mbti_{}_{}'.format(os.getpid(), ((count + 1) // split_num) + 1)
+            elif count + 1 >= len(p_p_article_num_list):
+                file_id = 'mbti_{}_{}'.format(pid, str(((count + 1) // split_num) + 1).rjust(2, '0'))
                 export_output_to_parquet(file_id, COLLECTION_DAT_DIR, result_tmp_dict_list)
         except Exception as e:
-            logging.error(str(e))
-            raise Exception(str(e))
+            logging.error(e)
+
 
 def naver_login(p_naver_id, p_naver_passwd):
     
@@ -165,8 +166,10 @@ def do_parallel(p_article_num_list, p_result_dict_list):
     cafe_id = 11856775
 
     driver = naver_login(naver_id, naver_passwd)
-    get_naver_cafe_article(p_article_num_list, driver, cafe_id, p_result_dict_list)
-
+    try:
+        get_naver_cafe_article(p_article_num_list, driver, cafe_id, p_result_dict_list)
+    finally:
+        driver.quit()
 
 def main():
 
@@ -174,17 +177,24 @@ def main():
 
     message = {
         'start_time': str(start_time),
-        "collection_status": "IN_PROGRESS"
+        'collection_status': 'IN_PROGRESS'
     }
-    logging.error(message)
+    logging.info(message)
 
     try:
-        
+
+        if not os.path.exists(COLLECTION_DAT_DIR):
+            os.makedirs(COLLECTION_DAT_DIR, exist_ok=True)
+
         manager = Manager()
         result_dict_list = manager.list()
 
         article_max_num = 387000
         article_num_list = range(1, article_max_num)
+
+        # df = pd.read_csv(os.path.join(COLLECTION_OUT_DIR, 'failure_id_df.csv'))
+        # article_num_list = list(df['article_num'])
+
         cpu_count = min(int(mp.cpu_count()), len(article_num_list))
         iterable = product(np.array_split(article_num_list, cpu_count), [result_dict_list])
 
@@ -194,17 +204,14 @@ def main():
         except Exception as e:
             raise Exception(e)
 
-        if not os.path.exists(COLLECTION_DAT_DIR):
-            os.makedirs(COLLECTION_DAT_DIR, exist_ok=True)
-
-        export_output_to_parquet('mbti_df', COLLECTION_DAT_DIR, result_dict_list)
+        export_output_to_parquet('mbti_df', COLLECTION_DAT_DIR, list(result_dict_list))
 
         end_time = datetime.now()
         duration = end_time - start_time
         message = {
             'end_time': str(end_time),
             'duration': str(duration),
-            "collection_status": "SUCCESS"
+            'collection_status': 'SUCCESS'
         }
         logging.info(message)
 
@@ -214,8 +221,8 @@ def main():
         message = {
             'end_time': str(end_time),
             'duration': str(duration),
-            "collection_status_desc": str(e),
-            "collection_status": "FAILURE"
+            'collection_status_desc': str(e),
+            'collection_status': 'FAILURE'
         }
         logging.error(message)
         raise Exception(message)
