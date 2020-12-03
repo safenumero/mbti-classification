@@ -30,48 +30,48 @@ class SimpleNLClassifier:
         X_train, X_test, y_train, y_test = train_test_split(self._X_data, self._y_data, test_size=test_size, random_state=seed)
         return X_train, X_test, y_train, y_test
 
-    def multinomial_naive_bayes(self, X_train, y_train, max_features=50000, n_jobs=-1):
-
-        model = Pipeline([('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
+    def multinomial_naive_bayes(self, X_train, y_train, n_jobs=-1):
+        # ('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
+        model = Pipeline([
                             ('tfidf', TfidfTransformer()),
                             ('clf', MultinomialNB(n_jobs=n_jobs)),
                             ])
         model.fit(X_train, y_train)
         return model
 
-    def k_neighbors(self, X_train, y_train, max_features=50000, n_jobs=-1):
-       #tokenizer=self._tk.tokenize_by_mecab
-        model = Pipeline([('vect', CountVectorizer(stop_words=self._stop_words, max_features=max_features)),
+    def k_neighbors(self, X_train, y_train, n_jobs=-1):
+
+        # ('vect', CountVectorizer(stop_words=self._stop_words, max_features=max_features)),
+        model = Pipeline([
                      ('tfidf', TfidfTransformer()),
                      ('clf', KNeighborsClassifier(n_jobs=n_jobs)),
                      ])
         model.fit(X_train, y_train)
         return model
 
-    def linear_svm(self, X_train, y_train, max_features=50000, n_jobs=-1):
-
-        model = Pipeline([('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
+    def linear_svm(self, X_train, y_train, n_jobs=-1):
+        # ('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
+        model = Pipeline([
                      ('tfidf', TfidfTransformer()),
                      ('clf', LinearSVC(n_jobs=n_jobs)),
                      ])
         model.fit(X_train, y_train)
         return model
 
-    def random_forest(self, X_train, y_train, max_features=50000, n_estimators=300, n_jobs=-1):
-
-        model = Pipeline([('vect', CountVectorizer(stop_words=self._stop_words, max_features=max_features)),
+    def random_forest(self, X_train, y_train, max_depth=3, n_estimators=300, n_jobs=-1, random_state=7):
+        # ('vect', CountVectorizer(stop_words=self._stop_words, max_features=max_features)),
+        model = Pipeline([
                      ('tfidf', TfidfTransformer()),
-                     ('clf', RandomForestClassifier(n_estimators=n_estimators, n_jobs=n_jobs)),
+                     ('clf', RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimators, n_jobs=n_jobs, random_state=random_state)),
                      ])
         model.fit(X_train, y_train)
         return model
 
-    def xgboost(self, X_train, y_train, max_features=50000, max_depth=3, n_estimators=300, learning_rate=0.1, n_jobs=-1):
-#tokenize_by_okt(self, doc)
-#[('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_okt, max_features=max_features)),
+    def xgboost(self, X_train, y_train, max_depth=3, n_estimators=300, learning_rate=0.1, n_jobs=-1, random_state=7):
+        # ('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_okt, max_features=max_features)),
         model = Pipeline([
                      ('tfidf', TfidfTransformer()),
-                     ('clf', XGBClassifier(max_depth=max_depth, n_estimators=n_estimators, learning_rate=learning_rate, n_jobs=10)),
+                     ('clf', XGBClassifier(max_depth=max_depth, n_estimators=n_estimators, learning_rate=learning_rate, n_jobs=10, random_state=random_state)),
                      ])
         model.fit(X_train, y_train)
         return model
@@ -84,8 +84,15 @@ class SimpleNLClassifier:
         predicted_proba = model.predict_proba(X_test)
         return predicted_proba
 
+    def cross_val_score(self, model, X_train, y_train, dst_path, method='', cv=5, scoring='f1_micro'):
+        print('-'*80, file=open(dst_path, 'a'))
+        print('{} - Cross Validation Scores'.format(method), file=open(dst_path, 'a'))
+        scores = cross_val_score(model, X_train, y_train, cv=5, scoring=scoring)
+        print('교차 검증 {} 점수: {}'.format(scoring, scores), file=open(dst_path, 'a'))
+        print('교차 검증 {} 평균 점수: {}'.format(scoring, scores.mean()), file=open(dst_path, 'a'))
+        print('-'*80, file=open(dst_path, 'a'))
+
     def print_report(self, y_test, predicted, dst_path, method=''):
-		
         print('-'*80, file=open(dst_path, 'a'))
         print('{} - Classification Report'.format(method), file=open(dst_path, 'a'))
         print(metrics.classification_report(y_test, predicted), file=open(dst_path, 'a'))
