@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# pip install tendo
-# pip install pyarrow
 # nohup python /Users/a/mbti/mbtiapp/collection/parallel_collection.py > /Users/a/mbti/mbtidat/collection/log/parallel_collection.log 2>&1 &
 
 import os
@@ -39,7 +37,6 @@ def export_output_to_parquet(file_id, collection_dat_dir, data_dict_list):
     retried = 0; max_attempts = 5; err_msg = []
     while (retried < max_attempts):
         try:
-
             df = pd.DataFrame(data_dict_list)
             df.to_parquet(output_path, engine='pyarrow', index=False)
             message = {
@@ -192,8 +189,8 @@ def main():
         article_max_num = 387000
         article_num_list = range(1, article_max_num)
 
-        # df = pd.read_csv(os.path.join(COLLECTION_OUT_DIR, 'failure_id_df.csv'))
-        # article_num_list = list(df['article_num'])
+        df = pd.read_csv(os.path.join(COLLECTION_OUT_DIR, 'failure_id_df.csv'))
+        article_num_list = list(df['article_num'])
 
         cpu_count = min(int(mp.cpu_count()), len(article_num_list))
         iterable = product(np.array_split(article_num_list, cpu_count), [result_dict_list])

@@ -40,7 +40,4 @@ class JsonLogger:
 
                 self.logger.addHandler(fileHandler)
                 
-            return self.logger
-
-        else:
-            return self.logger
+        return self.logger

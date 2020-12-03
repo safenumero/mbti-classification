@@ -1,0 +1,13 @@
+pip install tendo
+pip install pyarrow
+pip install selenium
+pip install webdriver_manager
+pip install fake_useragent
+pip install nltk
+conda install -c conda-forge jpype1 -y
+pip install konlpy
+
+brew install libomp
+pip install xgboost
+pip install -v python-mecab-ko
+pip install langdetect
