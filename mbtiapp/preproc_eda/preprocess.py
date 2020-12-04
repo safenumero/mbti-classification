@@ -32,18 +32,18 @@ def load_dataset(src_path):
 
 def export_dataset(df, dst_dir, file_id, dtype='parquet_csv'):
 
-	if not os.path.exists(dst_dir):
-		os.makedirs(dst_dir, exist_ok=True)
+    if not os.path.exists(dst_dir):
+        os.makedirs(dst_dir, exist_ok=True)
 
-	dst_path_parquet = os.path.join(dst_dir, file_id + '.parquet')
-	dst_path_csv = os.path.join(dst_dir, file_id + '.csv')
-	if dtype == 'parquet':
-		df.to_parquet(dst_path_parquet, engine='pyarrow', index=False)
-	elif dtype == 'csv':
-		df.to_csv(dst_path_csv, index=False)
-	else:
-		df.to_parquet(dst_path_parquet, engine='pyarrow', index=False)
-		df.to_csv(dst_path_csv, index=False)
+    dst_path_parquet = os.path.join(dst_dir, file_id + '.parquet')
+    dst_path_csv = os.path.join(dst_dir, file_id + '.csv')
+    if dtype == 'parquet':
+        df.to_parquet(dst_path_parquet, engine='pyarrow', index=False)
+    elif dtype == 'csv':
+        df.to_csv(dst_path_csv, index=False)
+    else:
+        df.to_parquet(dst_path_parquet, engine='pyarrow', index=False)
+        df.to_csv(dst_path_csv, index=False)
 
 
 # Warning: stop_word를 일부라도 포함하는 단어는 통째로 제거됨, Tokenize 전 단계라 중요한 단어가 지워질 수 있음
@@ -67,103 +67,103 @@ def remove_irrelevant_boards(df, board_column='board'):
 
 def label_y_val(y_val_raw):
 
-	y_val_list = ['enfj', 'enfp', 'entj', 'entp', 'esfj', 'esfp', 'estj', 'estp', 'infj', 'infp', 'intj', 'intp', 'isfj', 'isfp', 'istj', 'istp']
-	target = total_target = ''
-	result_dict = {}
-	
-	try:
-		for word in y_val_list:
-			idx = y_val_raw.lower().find(word)
-			if idx >= 0:
-				result_dict[word] = idx
+    y_val_list = ['enfj', 'enfp', 'entj', 'entp', 'esfj', 'esfp', 'estj', 'estp', 'infj', 'infp', 'intj', 'intp', 'isfj', 'isfp', 'istj', 'istp']
+    target = total_target = ''
+    result_dict = {}
 
-		res = sorted(result_dict.items(), key=(lambda x: x[1]))
+    try:
+        for word in y_val_list:
+            idx = y_val_raw.lower().find(word)
+            if idx >= 0:
+                result_dict[word] = idx
 
-		total_list = []
-		
-		for cnt, word in enumerate(res):
-			if cnt == 0:
-				target = word[0]
-			total_list.append(word[0])
-				
-		total_target = ','.join(total_list)
-	except:
-		pass
+        res = sorted(result_dict.items(), key=(lambda x: x[1]))
 
-	return target, total_target
+        total_list = []
+        
+        for cnt, word in enumerate(res):
+            if cnt == 0:
+                target = word[0]
+            total_list.append(word[0])
+                
+        total_target = ','.join(total_list)
+    except:
+        pass
+
+    return target, total_target
 
 def normalize_date(date_raw):
-	date_raw_list = date_raw.split('.')
+    date_raw_list = date_raw.split('.')
 
-	try:
-		date = str(date_raw_list[0]).rjust(4, '0') + '-' + str(date_raw_list[1]).rjust(2, '0') + '-' + str(date_raw_list[2]).rjust(2, '0')
-	except:
-		date = ''
-	return date
+    try:
+        date = str(date_raw_list[0]).rjust(4, '0') + '-' + str(date_raw_list[1]).rjust(2, '0') + '-' + str(date_raw_list[2]).rjust(2, '0')
+    except:
+        date = ''
+    return date
 
 
 def main():
 
-	# raw data 로드
-	df = load_dataset(opt.src_dat_path)
+    # raw data 로드
+    df = load_dataset(opt.src_dat_path)
 
-	# 중복 게시글 제거
-	df = df.drop_duplicates(['article_num'], keep='first')
+    # 중복 게시글 제거
+    df = df.drop_duplicates(['article_num'], keep='first')
 
-	# 가입 인사, 설문 조사, 공지 사항 등 게시판 글 제거
-	df = remove_irrelevant_boards(df, board_column='board')
+    # 가입 인사, 설문 조사, 공지 사항 등 게시판 글 제거
+    df = remove_irrelevant_boards(df, board_column='board')
 
-	# mbti 및 기타 성격 분류 등 직접적으로 mbti를 나타내는 어휘 제거
-	stop_words = get_mbti_stop_words()
-	cleaner = TextCleaner(stop_words)
+    # mbti 및 기타 성격 분류 등 직접적으로 mbti를 나타내는 어휘 제거
+    stop_words = get_mbti_stop_words()
+    cleaner = TextCleaner(stop_words)
 
-	# 게시글 제목에 대해 특수문자, 이모티콘 등 제거
-	df['title_cleaned'] = df['title'].apply(lambda x: cleaner.cleanup_text(x))
+    # 게시글 제목에 대해 특수문자, 이모티콘 등 제거
+    df['title_cleaned'] = df['title'].apply(lambda x: cleaner.cleanup_text(x))
 
-	# 제시글 내용에 대해 특수문자, 이모티콘 등 제거
-	df['contents_cleaned'] = df['contents'].apply(lambda x: cleaner.cleanup_text(x))
+    # 제시글 내용에 대해 특수문자, 이모티콘 등 제거
+    df['contents_cleaned'] = df['contents'].apply(lambda x: cleaner.cleanup_text(x))
 
-	df['X_val'] = df['title_cleaned'] + ' ' + df['contents_cleaned']
+    # 게시글 텍스트 길이가 30 이상 4000 미만인 것들만 필터, 너무 짧은 글은 유효하지 않고, 너무 긴글은 자신의 글이 아니라 다른곳에서 퍼온글이거나 분석글일 가능성이 높음
+    df['contents_cleaned'] = df['contents_cleaned'].apply(lambda x: x if len(x) > 30 and len(x) < 4000 else '')
+    #df['contents_cleaned'] = df['contents_cleaned'].apply(lambda x: x if len(x) > 30 else '')
+    df = df[df['contents_cleaned'] != '']
 
-        # 게시글 텍스트 길이가 30 이상 4000 미만인 것들만 필터, 너무 짧은 글은 유효하지 않고, 너무 긴글은 자신의 글이 아니라 다른곳에서 퍼온글이거나 분석글일 가능성이 높음
-	df['contents_cleaned'] = df['contents_cleaned'].apply(lambda x: x if len(x) > 30 and len(x) < 4000 else '')
-	#df['contents_cleaned'] = df['contents_cleaned'].apply(lambda x: x if len(x) > 30 else '')
-	df = df[df['contents_cleaned'] != '']
+    df['X_val'] = df['title_cleaned'] + ' ' + df['contents_cleaned']
 
-	# 날짜 'YYYY-mm-dd' format으로 normalization
-	df['date_cleaned'] = df['date'].apply(lambda x: normalize_date(x))
+    # 날짜 'YYYY-mm-dd' format으로 normalization
+    df['date_cleaned'] = df['date'].apply(lambda x: normalize_date(x))
 
-	# nick_name으로 부터 target 추출
-	df['target_desc'], df['total_target'] = zip(*df['nick_name'].apply(lambda x: label_y_val(x)))
-	df = df[df['target_desc'] != '']
+    # nick_name으로 부터 target 추출
+    df['target_desc'], df['total_target'] = zip(*df['nick_name'].apply(lambda x: label_y_val(x)))
+    df = df[df['target_desc'] != '']
 
-	mapping = {'enfj': 0, 'enfp': 1, 'entj': 2, 'entp': 3,
-				'esfj': 4, 'esfp': 5, 'estj': 6, 'estp': 7,
-				'infj': 8, 'infp': 9, 'intj': 10, 'intp': 11,
-				'isfj': 12, 'isfp': 13, 'istj': 14, 'istp': 15}
+    mapping = {'enfj': 0, 'enfp': 1, 'entj': 2, 'entp': 3,
+                'esfj': 4, 'esfp': 5, 'estj': 6, 'estp': 7,
+                'infj': 8, 'infp': 9, 'intj': 10, 'intp': 11,
+                'isfj': 12, 'isfp': 13, 'istj': 14, 'istp': 15}
 
-	df['target'] = df['target_desc'].map(mapping)
+    df['target'] = df['target_desc'].map(mapping)
 
-	map1 = {"i": 0, "e": 1}
-	map2 = {"n": 0, "s": 1}
-	map3 = {"t": 0, "f": 1}
-	map4 = {"j": 0, "p": 1}
-	df['i_e'] = df['target_desc'].astype(str).str[0]
-	df['i_e'] = df['i_e'].map(map1)
-	df['n_s'] = df['target_desc'].astype(str).str[1]
-	df['n_s'] = df['n_s'].map(map2)
-	df['t_f'] = df['target_desc'].astype(str).str[2]
-	df['t_f'] = df['t_f'].map(map3)
-	df['j_p'] = df['target_desc'].astype(str).str[3]
-	df['j_p'] = df['j_p'].map(map4)
+    map1 = {"i": 0, "e": 1}
+    map2 = {"n": 0, "s": 1}
+    map3 = {"t": 0, "f": 1}
+    map4 = {"j": 0, "p": 1}
+    df['i_e'] = df['target_desc'].astype(str).str[0]
+    df['i_e'] = df['i_e'].map(map1)
+    df['n_s'] = df['target_desc'].astype(str).str[1]
+    df['n_s'] = df['n_s'].map(map2)
+    df['t_f'] = df['target_desc'].astype(str).str[2]
+    df['t_f'] = df['t_f'].map(map3)
+    df['j_p'] = df['target_desc'].astype(str).str[3]
+    df['j_p'] = df['j_p'].map(map4)
 
-	file_id = 'mbti_cleaned_df'
+    file_id = 'mbti_cleaned_df'
 
-	# parquet, csv format으로 전처리된 데이터 저장
-	export_dataset(df, PREPROC_EDA_DAT_DIR, file_id)
+    # parquet, csv format으로 전처리된 데이터 저장
+    export_dataset(df, PREPROC_EDA_DAT_DIR, file_id)
 
 if __name__ == '__main__':
 
-	opt = parser.parse_args()
+    opt = parser.parse_args()
 
-	main()
+    main()

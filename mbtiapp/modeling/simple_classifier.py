@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 from sklearn import metrics
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import CountVectorizer
@@ -30,30 +33,30 @@ class SimpleNLClassifier:
         X_train, X_test, y_train, y_test = train_test_split(self._X_data, self._y_data, test_size=test_size, random_state=seed)
         return X_train, X_test, y_train, y_test
 
-    def multinomial_naive_bayes(self, X_train, y_train, n_jobs=-1):
+    def multinomial_naive_bayes(self, X_train, y_train):
         # ('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
         model = Pipeline([
                             ('tfidf', TfidfTransformer()),
-                            ('clf', MultinomialNB(n_jobs=n_jobs)),
+                            ('clf', MultinomialNB()),
                             ])
         model.fit(X_train, y_train)
         return model
 
-    def k_neighbors(self, X_train, y_train, n_jobs=-1):
+    def k_neighbors(self, X_train, y_train):
 
         # ('vect', CountVectorizer(stop_words=self._stop_words, max_features=max_features)),
         model = Pipeline([
                      ('tfidf', TfidfTransformer()),
-                     ('clf', KNeighborsClassifier(n_jobs=n_jobs)),
+                     ('clf', KNeighborsClassifier()),
                      ])
         model.fit(X_train, y_train)
         return model
 
-    def linear_svm(self, X_train, y_train, n_jobs=-1):
+    def linear_svm(self, X_train, y_train):
         # ('vect', CountVectorizer(tokenizer=self._tk.tokenize_by_mecab, stop_words=self._stop_words, max_features=max_features)),
         model = Pipeline([
                      ('tfidf', TfidfTransformer()),
-                     ('clf', LinearSVC(n_jobs=n_jobs)),
+                     ('clf', LinearSVC()),
                      ])
         model.fit(X_train, y_train)
         return model
@@ -87,7 +90,7 @@ class SimpleNLClassifier:
     def cross_val_score(self, model, X_train, y_train, dst_path, method='', cv=5, scoring='f1_micro'):
         print('-'*80, file=open(dst_path, 'a'))
         print('{} - Cross Validation Scores'.format(method), file=open(dst_path, 'a'))
-        scores = cross_val_score(model, X_train, y_train, cv=5, scoring=scoring)
+        scores = cross_val_score(model, X_train, y_train, cv=cv, scoring=scoring)
         print('교차 검증 {} 점수: {}'.format(scoring, scores), file=open(dst_path, 'a'))
         print('교차 검증 {} 평균 점수: {}'.format(scoring, scores.mean()), file=open(dst_path, 'a'))
         print('-'*80, file=open(dst_path, 'a'))

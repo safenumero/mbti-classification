@@ -9,7 +9,7 @@ class TextCleaner:
         self._stop_words = stop_words
 
     def cleanup_text(self, text):
-			
+        
         rules = [
             {r'[\n\t\r]': u' '}, # remove control charactor
             {r'([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)': u' '}, # remove email
@@ -36,11 +36,11 @@ class TextCleaner:
         return text.strip()
 
     def remove_all_except_kor(self, text):
-			
+        
         rules = [
             {r'[^ ㄱ-ㅣ가-힣]+': u' '}, # remove all except kor
             {r'([ㅋ][ㅋ]+|[ㅎ][ㅎ]+)': u' 웃음 '}, # ㅋㅋㅋㅋ, ㅎㅎ -> 웃음 변환
-            {r'([ㅜ]+|[ㅠ]+)': u' 슬픔 '} # ㅜ, ㅠㅠ -> 슬픔 변환
+            {r'([ㅜ]+|[ㅠ]+)': u' 슬픔 '} # ㅜ, ㅠㅠ -> 슬픔 변환   
         ]
 
         self._stop_words.extend(['은', '는', '이', '가'])      

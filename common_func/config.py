@@ -8,14 +8,14 @@ DAT_DIR = os.path.join(ROOT_DIR, 'mbtidat')
 CONFIG_DIR = os.path.join(ROOT_DIR, 'config')
 
 try:
-	NAVER_CONFIG = json.load(open(os.path.join(CONFIG_DIR, 'naver_config.json'), "r"))
+    NAVER_CONFIG = json.load(open(os.path.join(CONFIG_DIR, 'naver_config.json'), "r"))
 except:
-	NAVER_CONFIG = {
-		'sub': {
-			'naver_id': 'test',
-			'naver_passwd': 'test'
-		}
-	}
+    NAVER_CONFIG = {
+        'sub': {
+            'naver_id': 'test',
+            'naver_passwd': 'test'
+        }
+    }
 
 COLLECTION_DAT_DIR = os.path.join(DAT_DIR, 'collection', 'dat')
 COLLECTION_OUT_DIR = os.path.join(DAT_DIR, 'collection', 'out')
